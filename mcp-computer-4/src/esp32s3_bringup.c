@@ -1,6 +1,8 @@
 /****************************************************************************
  * boards/xtensa/esp32s3/esp32s3-devkit/src/esp32s3_bringup.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -24,14 +26,12 @@
 
 #include <nuttx/config.h>
 
-#include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <syslog.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
-#include <syslog.h>
 #include <debug.h>
 #include <stdio.h>
 
@@ -44,15 +44,15 @@
 #  include "esp32s3_board_tim.h"
 #endif
 
-#ifdef CONFIG_ESP32S3_WIFI
+#ifdef CONFIG_ESPRESSIF_WIFI
 #  include "esp32s3_board_wlan.h"
 #endif
 
-#ifdef CONFIG_ESP32S3_BLE
+#ifdef CONFIG_ESPRESSIF_BLE
 #  include "esp32s3_ble.h"
 #endif
 
-#ifdef CONFIG_ESP32S3_WIFI_BT_COEXIST
+#ifdef CONFIG_ESPRESSIF_WIFI_BT_COEXIST
 #  include "esp32s3_wifi_adapter.h"
 #endif
 
@@ -107,6 +107,13 @@
 #ifdef CONFIG_ESP32S3_SPI
 #include "esp32s3_spi.h"
 #include "esp32s3_board_spidev.h"
+#  ifdef CONFIG_ESPRESSIF_SPI_BITBANG
+#    include "espressif/esp_spi_bitbang.h"
+#  endif
+#endif
+
+#ifdef CONFIG_ESP32S3_SDMMC
+#include "esp32s3_board_sdmmc.h"
 #endif
 
 #ifdef CONFIG_ESP32S3_AES_ACCELERATOR
@@ -115,6 +122,19 @@
 
 #ifdef CONFIG_ESP32S3_ADC
 #include "esp32s3_board_adc.h"
+#endif
+
+#ifdef CONFIG_ESPRESSIF_TEMP
+#  include "espressif/esp_temperature_sensor.h"
+#endif
+
+#ifdef CONFIG_ESP_PCNT
+#  include "espressif/esp_pcnt.h"
+#  include "esp32s3_board_pcnt.h"
+#endif
+
+#ifdef CONFIG_SYSTEM_NXDIAG_ESPRESSIF_CHIP_WO_TOOL
+#  include "espressif/esp_nxdiag.h"
 #endif
 
 #include "esp32s3-devkit.h"
@@ -171,7 +191,15 @@ int esp32s3_bringup(void)
       syslog(LOG_ERR, "ERROR: Failed to init spidev 3: %d\n", ret);
     }
   #endif
-#endif
+
+  #ifdef CONFIG_ESPRESSIF_SPI_BITBANG
+  ret = board_spidev_initialize(ESPRESSIF_SPI_BITBANG);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: Failed to init spidev 3: %d\n", ret);
+    }
+  #endif /* CONFIG_ESPRESSIF_SPI_BITBANG */
+#endif /* CONFIG_ESP32S3_SPI && CONFIG_SPI_DRIVER*/
 
 #if defined(CONFIG_ESP32S3_EFUSE)
   ret = esp32s3_efuse_initialize("/dev/efuse");
@@ -222,7 +250,7 @@ int esp32s3_bringup(void)
 
 #ifdef CONFIG_ESP32S3_SPIFLASH
   ret = board_spiflash_init();
-  if (ret)
+  if (ret < 0)
     {
       syslog(LOG_ERR, "ERROR: Failed to initialize SPI Flash\n");
     }
@@ -256,6 +284,16 @@ int esp32s3_bringup(void)
   if (ret < 0)
     {
       syslog(LOG_ERR, "ERROR: board_rmt_txinitialize() failed: %d\n", ret);
+    }
+#endif
+
+#ifdef CONFIG_ESPRESSIF_TEMP
+  struct esp_temp_sensor_config_t cfg = TEMPERATURE_SENSOR_CONFIG(10, 50);
+  ret = esp_temperature_sensor_initialize(cfg);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "Failed to initialize temperature sensor driver: %d\n",
+             ret);
     }
 #endif
 
@@ -391,17 +429,17 @@ int esp32s3_bringup(void)
     }
 #endif
 
-#ifdef CONFIG_ESP32S3_WIRELESS
+#ifdef CONFIG_ESPRESSIF_WIRELESS
 
-#ifdef CONFIG_ESP32S3_WIFI_BT_COEXIST
-  ret = esp32s3_wifi_bt_coexist_init();
+#ifdef CONFIG_ESPRESSIF_WIFI_BT_COEXIST
+  ret = esp_wifi_bt_coexist_init();
   if (ret)
     {
       syslog(LOG_ERR, "ERROR: Failed to initialize Wi-Fi and BT coexist\n");
     }
 #endif
 
-#ifdef CONFIG_ESP32S3_BLE
+#ifdef CONFIG_ESPRESSIF_BLE
   ret = esp32s3_ble_initialize();
   if (ret)
     {
@@ -409,7 +447,7 @@ int esp32s3_bringup(void)
     }
 #endif
 
-#ifdef CONFIG_ESP32S3_WIFI
+#ifdef CONFIG_ESPRESSIF_WIFI
   ret = board_wlan_init();
   if (ret < 0)
     {
@@ -418,6 +456,14 @@ int esp32s3_bringup(void)
     }
 #endif
 
+#endif
+
+#ifdef CONFIG_ESP32S3_OPENETH
+  ret = esp_openeth_initialize();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: Failed to initialize Open ETH ethernet.\n");
+    }
 #endif
 
 #ifdef CONFIG_DEV_GPIO
@@ -450,6 +496,14 @@ int esp32s3_bringup(void)
     }
 #endif
 
+#ifdef CONFIG_ESP32S3_SDMMC
+  ret = board_sdmmc_initialize();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: Failed to initialize SDMMC: %d\n", ret);
+    }
+#endif
+
 #ifdef CONFIG_ESP32S3_AES_ACCELERATOR
   ret = esp32s3_aes_init();
   if (ret < 0)
@@ -479,6 +533,30 @@ int esp32s3_bringup(void)
   if (ret < 0)
     {
       syslog(LOG_ERR, "ERROR: board_capture_initialize failed: %d\n", ret);
+    }
+#endif
+
+#ifdef CONFIG_ESP_MCPWM_MOTOR_BDC
+  ret = board_motor_initialize();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: board_motor_initialize failed: %d\n", ret);
+    }
+#endif
+
+#ifdef CONFIG_ESP_PCNT
+  ret = board_pcnt_initialize();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: board_pcnt_initialize failed: %d\n", ret);
+    }
+#endif
+
+#ifdef CONFIG_SYSTEM_NXDIAG_ESPRESSIF_CHIP_WO_TOOL
+  ret = esp_nxdiag_initialize();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: esp_nxdiag_initialize failed: %d\n", ret);
     }
 #endif
 
