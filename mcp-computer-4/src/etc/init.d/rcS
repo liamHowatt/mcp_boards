@@ -25,3 +25,10 @@
 #ifdef CONFIG_SYSTEM_ADBD
 adbd &
 #endif
+
+#ifdef CONFIG_MCP_APPS_MCP_DAEMON
+mcp_daemon &
+#endif
+#ifdef CONFIG_MCP_APPS_MCP_FS
+mcp_fs &
+#endif
