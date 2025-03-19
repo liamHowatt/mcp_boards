@@ -22,3 +22,6 @@
 
 #include <nuttx/config.h>
 
+mkrd -m 1 -s 512 64
+mkfatfs /dev/ram1
+mount -t vfat /dev/ram1 /tmp

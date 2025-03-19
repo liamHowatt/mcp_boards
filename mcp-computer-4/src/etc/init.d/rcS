@@ -22,6 +22,8 @@
 
 #include <nuttx/config.h>
 
+echo
+
 #ifdef CONFIG_SYSTEM_ADBD
 adbd &
 #endif
