@@ -28,8 +28,8 @@ echo
 adbd &
 #endif
 
-#ifdef CONFIG_MCP_APPS_MCP_DAEMON
-mcp_daemon &
+#ifdef CONFIG_MCP_APPS_MCPD
+mcpd &
 #endif
 #ifdef CONFIG_MCP_APPS_MCP_FS
 mcp_fs &
