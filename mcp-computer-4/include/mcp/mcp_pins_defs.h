@@ -5,6 +5,7 @@ typedef enum {
 } mcpd_pins_type_t;
 
 enum {
+    MCP_PINS_SPI_CLK,
     MCP_PINS_SPI_MISO,
     MCP_PINS_SPI_MOSI,
     MCP_PINS_SPI_CS,
