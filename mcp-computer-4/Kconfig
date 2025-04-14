@@ -101,4 +101,8 @@ config PM_SLEEP_WAKEUP_NSEC
 
 endif # PM
 
+config MCP_PINS
+	bool "MCP Pins resource acquisition"
+	default n
+
 endif # ARCH_BOARD_MCP_COMPUTER_4

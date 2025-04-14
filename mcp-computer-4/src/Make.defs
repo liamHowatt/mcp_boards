@@ -27,6 +27,9 @@ CSRCS += esp32s3_appinit.c
 ifeq ($(CONFIG_BOARDCTL_RESET),y)
 CSRCS += esp32s3_reset.c
 endif
+ifeq ($(CONFIG_BOARDCTL_IOCTL),y)
+CSRCS += esp32s3_ioctl.c
+endif
 endif
 
 ifeq ($(CONFIG_ARCH_BUTTONS),y)
@@ -67,4 +70,8 @@ RCSRCS  = etc/init.d/rc.sysinit etc/init.d/rcS
 ifeq ($(CONFIG_TXTABLE_PARTITION),y)
 RCRAWS  = etc/txtable.txt
 endif # CONFIG_TXTABLE_PARTITION
+endif
+
+ifeq ($(CONFIG_MCP_PINS),y)
+CSRCS += esp32s3_mcp_pins.c
 endif

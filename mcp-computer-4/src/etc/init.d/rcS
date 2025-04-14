@@ -28,9 +28,13 @@ echo
 adbd &
 #endif
 
+/*
 #ifdef CONFIG_MCP_APPS_MCPD
 mcpd &
 #endif
 #ifdef CONFIG_MCP_APPS_MCP_FS
 mcp_fs &
 #endif
+*/
+
+source /data/startup &

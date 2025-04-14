@@ -176,6 +176,9 @@ int esp32s3_bringup(void)
 #endif
 
 #if defined(CONFIG_ESP32S3_SPI) && defined(CONFIG_SPI_DRIVER)
+
+  #ifndef CONFIG_MCP_PINS
+
   #ifdef CONFIG_ESP32S3_SPI2
   ret = board_spidev_initialize(ESP32S3_SPI2);
   if (ret < 0)
@@ -191,6 +194,8 @@ int esp32s3_bringup(void)
       syslog(LOG_ERR, "ERROR: Failed to init spidev 3: %d\n", ret);
     }
   #endif
+
+  #endif /* ndef CONFIG_MCP_PINS */
 
   #ifdef CONFIG_ESPRESSIF_SPI_BITBANG
   ret = board_spidev_initialize(ESPRESSIF_SPI_BITBANG);

@@ -1,11 +1,13 @@
 #pragma once
 
+#include <nuttx/config.h>
+
+#ifdef CONFIG_MCP_PINS
+
 #include "mcp_pins_defs.h"
 
 #include <stdint.h>
 #include <stdbool.h>
-
-#define MCP_PINS_COUNT (sizeof(mcp_pins) / sizeof(*mcp_pins))
 
 typedef struct {
    uint8_t socket_id;
@@ -14,8 +16,8 @@ typedef struct {
 } mcp_pins_dsc_t;
 
 typedef struct {
-   const char * path;
-   uint8_t type;
+   uint8_t periph_type;
+   uint8_t minor_number;
    mcp_pins_dsc_t pins[4];
 } mcp_pins_entry_t;
 
@@ -23,11 +25,13 @@ typedef struct {
    so this data does not need to reside in
    user or kernel dataspace exclusively.
  */
-static const mcp_pins_entry_t mcp_pins[] = {
-   {"/dev/spi2", MCP_PINS_TYPE_SPI, {
-      [MCP_PINS_SPI_CLK ] = {0, 0, .is_input=false},
-      [MCP_PINS_SPI_MISO] = {0, 0, .is_input=true },
-      [MCP_PINS_SPI_MOSI] = {0, 1, .is_input=false},
-      [MCP_PINS_SPI_CS  ] = {0, 3, .is_input=false}
+static const mcp_pins_entry_t mcp_pins[MCP_PINS_PERIPH_COUNT] = {
+   {MCP_PINS_PERIPH_TYPE_SPI, 2, {
+      [MCP_PINS_PIN_SPI_CLK ] = {0, 0, .is_input=false},
+      [MCP_PINS_PIN_SPI_MISO] = {0, 0, .is_input=true },
+      [MCP_PINS_PIN_SPI_MOSI] = {0, 1, .is_input=false},
+      [MCP_PINS_PIN_SPI_CS  ] = {0, 3, .is_input=false}
    }}
 };
+
+#endif /* CONFIG_MCP_PINS */

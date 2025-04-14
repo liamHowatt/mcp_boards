@@ -275,5 +275,7 @@ int esp32s3_lan9250_uninitialize(int port);
 int esp_openeth_initialize(void);
 #endif
 
+int board_mcp_pins(uintptr_t arg);
+
 #endif /* __ASSEMBLY__ */
 #endif /* __BOARDS_XTENSA_ESP32S3_ESP32S3_DEVKIT_SRC_ESP32S3_DEVKIT_H */
