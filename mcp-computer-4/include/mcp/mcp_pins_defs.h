@@ -2,7 +2,7 @@
 
 #include <nuttx/config.h>
 
-#define MCP_PINS_PERIPH_COUNT 1
+#define MCP_PINS_PERIPH_COUNT 2
 
 typedef enum {
     MCP_PINS_PERIPH_TYPE_SPI,

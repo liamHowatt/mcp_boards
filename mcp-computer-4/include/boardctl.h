@@ -22,9 +22,12 @@
 
 struct mcp_pins_s
 {
-  int peripheral;
-  int driver;
-  int minor;
+  uint8_t peripheral;
+  uint8_t driver;
+  uint8_t identifier;
+  uint8_t user_devid_hint;
+
+  uint8_t minor_output;
 };
 
 #endif /* __BOARDS_XTENSA_ESP32S3_ESP32S3_DEVKIT_INCLUDE_BOARDCTL_H */
