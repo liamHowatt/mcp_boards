@@ -38,6 +38,10 @@ static const mcp_pins_entry_t mcp_pins[MCP_PINS_PERIPH_COUNT] = {
       [MCP_PINS_PIN_SPI_MOSI] = {0, 1, .is_input=false},
       [MCP_PINS_PIN_SPI_CS  ] = {1, 1, .is_input=false}
    }},
+   {MCP_PINS_PERIPH_TYPE_UART, 1, {
+      [MCP_PINS_PIN_UART_TX ] = {1, 3, .is_input=false},
+      [MCP_PINS_PIN_UART_RX ] = {1, 3, .is_input=true },
+   }},
 };
 
 #endif /* CONFIG_MCP_PINS */

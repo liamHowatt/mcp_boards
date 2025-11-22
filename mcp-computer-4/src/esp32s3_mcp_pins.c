@@ -222,6 +222,53 @@ int board_mcp_pins(uintptr_t arg)
         return -ENODEV;
 #endif
 
+      case MCP_PINS_PERIPH_TYPE_UART:
+#if \
+defined(CONFIG_ESP32S3_UART1) \
+
+        {
+          uint8_t port_number = pins->identifier;
+
+          switch (port_number)
+            {
+              case 1:
+#ifdef CONFIG_ESP32S3_UART1
+                {
+                  static bool in_use;
+                  in_use_p = &in_use;
+                }
+                break;
+#else /* CONFIG_ESP32S3_UART1 */
+                return -ENODEV;
+#endif
+
+              default:
+                return -EINVAL;
+            }
+
+          if(*in_use_p)
+            {
+              return -EBUSY;
+            }
+
+          pins->minor_output = port_number;
+
+          switch (pins->driver)
+            {
+              case MCP_PINS_DRIVER_TYPE_UART_RAW:
+                break;
+
+              default:
+                return -EINVAL;
+            }
+        }
+        break;
+#else /*
+defined(CONFIG_ESP32S3_UART1)
+*/
+        return -ENODEV;
+#endif
+
       default:
         return -EINVAL;
     }
