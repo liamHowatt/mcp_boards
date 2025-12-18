@@ -28,13 +28,30 @@ echo
 adbd &
 #endif
 
-/*
-#ifdef CONFIG_MCP_APPS_MCPD
-mcpd &
-#endif
-#ifdef CONFIG_MCP_APPS_MCP_FS
-mcp_fs &
-#endif
-*/
+if test -e /data/startup
+then
+    sh /data/startup &
+else
 
-source /data/startup &
+    sh &
+
+    mcpd &
+    mcp_fs &
+    mcp_lvgl -O &
+
+    set I 0
+    while true
+    do
+        while test -d /mnt/mcp/${I}
+        do
+            if test -e /mnt/mcp/${I}/main.4th
+            then
+                set MCP_PEER $I
+                mcp_forth -O /mnt/mcp/${I}/main.4th &
+            fi
+            set I `expr $I + 1`
+        done
+        sleep 1
+    done
+
+fi
