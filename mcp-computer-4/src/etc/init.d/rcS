@@ -33,6 +33,6 @@ then
     sh /data/startup &
 #ifdef CONFIG_MCP_APPS_MCP_INIT
 else
-    mcp_init &
+    mcp_init -O &
 #endif
 fi
