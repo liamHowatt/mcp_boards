@@ -10,6 +10,7 @@
 #include <assert.h>
 
 #include "esp32s3_spi.h"
+#include "esp32s3_i2s.h"
 #include "esp32s3_board_spidev.h"
 #include "esp32s3_gpio.h"
 #include "esp32s3-devkit.h"
@@ -266,6 +267,54 @@ defined(CONFIG_ESP32S3_UART1) \
 #else /*
 defined(CONFIG_ESP32S3_UART1)
 */
+        return -ENODEV;
+#endif
+
+      case MCP_PINS_PERIPH_TYPE_I2S:
+#ifdef CONFIG_ESP32S3_I2S
+        {
+          uint8_t port_number = pins->identifier;
+          int port;
+
+          switch (port_number)
+            {
+              case 0:
+#ifdef CONFIG_ESP32S3_I2S0
+                {
+                  static bool in_use;
+                  in_use_p = &in_use;
+                  port = ESP32S3_I2S0;
+                }
+                break;
+#else  /* CONFIG_ESP32S3_I2S0 */
+                return -ENODEV;
+#endif
+
+              default:
+                return -EINVAL;
+            }
+
+          if(*in_use_p)
+            {
+              return -EBUSY;
+            }
+
+          switch (pins->driver)
+            {
+              case MCP_PINS_DRIVER_TYPE_I2S_RAW:
+                ret = board_i2sdev_initialize(port, true, false);
+                if (ret < 0)
+                  {
+                    return ret;
+                  }
+                break;
+
+              default:
+                return -EINVAL;
+            }
+        }
+        break;
+#else /* CONFIG_ESP32S3_I2S */
         return -ENODEV;
 #endif
 

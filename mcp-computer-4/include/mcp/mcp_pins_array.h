@@ -42,6 +42,11 @@ static const mcp_pins_entry_t mcp_pins[MCP_PINS_PERIPH_COUNT] = {
       [MCP_PINS_PIN_UART_TX ] = {1, 3, .is_input=false},
       [MCP_PINS_PIN_UART_RX ] = {1, 3, .is_input=true },
    }},
+   {MCP_PINS_PERIPH_TYPE_I2S, 0, {
+      [MCP_PINS_PIN_I2S_BCLK] = {1, 2, .is_input=false},
+      [MCP_PINS_PIN_I2S_WS  ] = {0, 3, .is_input=false},
+      [MCP_PINS_PIN_I2S_DATA] = {0, 2, .is_input=false},
+   }},
 };
 
 #endif /* CONFIG_MCP_PINS */
