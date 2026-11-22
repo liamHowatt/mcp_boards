@@ -53,16 +53,17 @@
  * Private Types
  ****************************************************************************/
 
-struct mcp_half_s
+struct gp_s
 {
   struct gpio_dev_s dev;
   unsigned pin;
   pin_interrupt_t interrupt_callback;
+  gpio_intrtype_t interrupt_type;
 };
 
 struct mcp_s
 {
-  struct mcp_half_s half[2];
+  struct gp_s half[2];
 };
 
 /****************************************************************************
@@ -74,20 +75,31 @@ static int gp_write(struct gpio_dev_s *dev, bool value);
 static int gp_attach(struct gpio_dev_s *dev,
                      pin_interrupt_t callback);
 static int gp_enable(struct gpio_dev_s *dev, bool enable);
-static int gp_setpintype(FAR struct gpio_dev_s *dev,
-                         enum gpio_pintype_e pintype);
+static int gp_setpintype_mcp(FAR struct gpio_dev_s *dev,
+                             enum gpio_pintype_e pintype);
+static int gp_setpintype_gpioin(FAR struct gpio_dev_s *dev,
+                                enum gpio_pintype_e pintype);
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
 
-static const struct gpio_operations_s gp_ops =
+static const struct gpio_operations_s gp_ops_mcp =
 {
   .go_read   = gp_read,
   .go_write  = gp_write,
   .go_attach = gp_attach,
   .go_enable = gp_enable,
-  .go_setpintype = gp_setpintype,
+  .go_setpintype = gp_setpintype_mcp,
+};
+
+static const struct gpio_operations_s gp_ops_gpioin =
+{
+  .go_read   = gp_read,
+  .go_write  = NULL,
+  .go_attach = gp_attach,
+  .go_enable = gp_enable,
+  .go_setpintype = gp_setpintype_gpioin,
 };
 
 /****************************************************************************
@@ -100,12 +112,12 @@ static const struct gpio_operations_s gp_ops =
 
 static int gp_read(struct gpio_dev_s *dev, bool *value)
 {
-  struct mcp_half_s *half = (struct mcp_half_s *)dev;
+  struct gp_s *gp = (struct gp_s *)dev;
 
-  DEBUGASSERT(half != NULL && value != NULL);
-  gpioinfo("Reading... pin %u\n", half->pin);
+  DEBUGASSERT(gp != NULL && value != NULL);
+  gpioinfo("Reading... pin %u\n", gp->pin);
 
-  *value = esp32s3_gpioread(half->pin);
+  *value = esp32s3_gpioread(gp->pin);
   return OK;
 }
 
@@ -123,16 +135,13 @@ static int gp_write(struct gpio_dev_s *dev, bool value)
  * Name: esp32s3gpio_interrupt
  ****************************************************************************/
 
- static int esp32s3gpio_interrupt(int irq, void *context, void *arg)
- {
-   struct mcp_half_s *half = (struct mcp_half_s *)arg;
- 
-   DEBUGASSERT(half != NULL && half->interrupt_callback != NULL);
-   gpioinfo("Interrupt! callback=%p\n", half->interrupt_callback);
- 
-   half->interrupt_callback(&half->dev, half->pin);
-   return OK;
- }
+static int esp32s3gpio_interrupt(int irq, void *context, void *arg)
+{
+  struct gp_s *gp = (struct gp_s *)arg;
+
+  gp->interrupt_callback(&gp->dev, gp->pin);
+  return OK;
+}
 
 /****************************************************************************
  * Name: gp_attach
@@ -141,8 +150,8 @@ static int gp_write(struct gpio_dev_s *dev, bool value)
 static int gp_attach(struct gpio_dev_s *dev,
                      pin_interrupt_t callback)
 {
-  struct mcp_half_s *half = (struct mcp_half_s *)dev;
-  int irq = ESP32S3_PIN2IRQ(half->pin);
+  struct gp_s *gp = (struct gp_s *)dev;
+  int irq = ESP32S3_PIN2IRQ(gp->pin);
   int ret;
 
   gpioinfo("Attaching the callback\n");
@@ -152,7 +161,7 @@ static int gp_attach(struct gpio_dev_s *dev,
   esp32s3_gpioirqdisable(irq);
   ret = irq_attach(irq,
                    esp32s3gpio_interrupt,
-                   half);
+                   gp);
   if (ret < 0)
   {
     syslog(LOG_ERR, "ERROR: gp_attach() failed: %d\n", ret);
@@ -160,7 +169,7 @@ static int gp_attach(struct gpio_dev_s *dev,
   }
 
   gpioinfo("Attach %p\n", callback);
-  half->interrupt_callback = callback;
+  gp->interrupt_callback = callback;
   return OK;
 }
 
@@ -170,18 +179,18 @@ static int gp_attach(struct gpio_dev_s *dev,
 
 static int gp_enable(struct gpio_dev_s *dev, bool enable)
 {
-  struct mcp_half_s *half = (struct mcp_half_s *)dev;
-  int irq = ESP32S3_PIN2IRQ(half->pin);
+  struct gp_s *gp = (struct gp_s *)dev;
+  int irq = ESP32S3_PIN2IRQ(gp->pin);
 
   if (enable)
   {
-    if (half->interrupt_callback != NULL)
+    if (gp->interrupt_callback != NULL)
     {
       gpioinfo("Enabling the interrupt\n");
 
-      /* Configure the interrupt for high level */
+      /* Configure the interrupt */
 
-      esp32s3_gpioirqenable(irq, RISING);
+      esp32s3_gpioirqenable(irq, gp->interrupt_type);
     }
   }
   else
@@ -197,10 +206,10 @@ static int gp_enable(struct gpio_dev_s *dev, bool enable)
  * Name: gp_setpintype
  ****************************************************************************/
 
-static int gp_setpintype(FAR struct gpio_dev_s *dev,
-                         enum gpio_pintype_e pintype)
+static int gp_setpintype_mcp(FAR struct gpio_dev_s *dev,
+                             enum gpio_pintype_e pintype)
 {
-  struct mcp_half_s *half = (struct mcp_half_s *)dev;
+  struct gp_s *half = (struct gp_s *)dev;
 
   DEBUGASSERT(half != NULL);
   gpioinfo("Setting type %d... pin %u\n", pintype, half->pin);
@@ -223,13 +232,51 @@ static int gp_setpintype(FAR struct gpio_dev_s *dev,
   return OK;
 }
 
+static int gp_setpintype_gpioin(FAR struct gpio_dev_s *dev,
+                                enum gpio_pintype_e pintype)
+{
+  struct gp_s *gp = (struct gp_s *)dev;
 
-static void register_mcp_half(struct mcp_half_s *half, unsigned idx, unsigned pin, bool is_clk)
+  DEBUGASSERT(gp != NULL);
+  gpioinfo("Setting type %d... pin %u\n", pintype, gp->pin);
+
+  switch (pintype) {
+    case GPIO_INPUT_PIN:
+      gp->interrupt_type = DISABLED; /* should never actually be set */
+      break;
+    case GPIO_INTERRUPT_RISING_PIN:
+      gp->interrupt_type = RISING;
+      break;
+    case GPIO_INTERRUPT_FALLING_PIN:
+      gp->interrupt_type = FALLING;
+      break;
+    case GPIO_INTERRUPT_BOTH_PIN:
+      gp->interrupt_type = CHANGE;
+      break;
+    default:
+      return ERROR;
+  }
+
+  /* even if going from interrupt type to interrupt type,
+   * still need to reattach the new type
+   */
+
+  int irq = ESP32S3_PIN2IRQ(gp->pin);
+  esp32s3_gpioirqdisable(irq);
+
+  gp->dev.gp_pintype = pintype;
+
+  return OK;
+}
+
+
+static void register_mcp_half(struct gp_s *half, unsigned idx, unsigned pin, bool is_clk)
 {
   half->dev.gp_pintype = GPIO_INTERRUPT_RISING_PIN;
-  half->dev.gp_ops = &gp_ops;
+  half->dev.gp_ops = &gp_ops_mcp;
   half->pin = pin;
   half->interrupt_callback = NULL;
+  half->interrupt_type = RISING;
 
   esp32s3_gpiowrite(pin, 0);
   esp32s3_configgpio(pin, INPUT_PULLUP);
@@ -246,6 +293,24 @@ static void register_mcp(struct mcp_s *mcp, unsigned idx, unsigned clk_pin, unsi
   register_mcp_half(&mcp->half[1], idx, dat_pin, false);
 }
 
+
+static void register_gpioin(struct gp_s * gp, unsigned idx, unsigned pin)
+{
+  gp->dev.gp_pintype = GPIO_INPUT_PIN;
+  gp->dev.gp_ops = &gp_ops_gpioin;
+  gp->pin = pin;
+  gp->interrupt_callback = NULL;
+  gp->interrupt_type = DISABLED;
+
+  esp32s3_gpiowrite(pin, 0);
+  esp32s3_configgpio(pin, INPUT);
+
+  char name[16];
+  snprintf(name, sizeof(name), "gpioin%u", idx);
+
+  gpio_pin_register_byname(&gp->dev, name);
+}
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -260,6 +325,9 @@ int esp32s3_gpio_init(void)
   register_mcp(&mcp_0, 0, 21, 14);
   static struct mcp_s mcp_1;
   register_mcp(&mcp_1, 1, 16, 15);
+
+  static struct gp_s gpioin_0;
+  register_gpioin(&gpioin_0, 0, 10);
 
   return OK;
 }

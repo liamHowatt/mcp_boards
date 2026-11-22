@@ -2,12 +2,13 @@
 
 #include <nuttx/config.h>
 
-#define MCP_PINS_PERIPH_COUNT 4
+#define MCP_PINS_PERIPH_COUNT 5
 
 typedef enum {
     MCP_PINS_PERIPH_TYPE_SPI,
     MCP_PINS_PERIPH_TYPE_UART,
     MCP_PINS_PERIPH_TYPE_I2S,
+    MCP_PINS_PERIPH_TYPE_GPIOIN,
     MCP_PINS_PERIPH_TYPE_LAST_
 } mcpd_pins_periph_type_t;
 
@@ -21,6 +22,9 @@ typedef enum {
 
     MCP_PINS_DRIVER_TYPE_I2S_RAW = 0,
     MCP_PINS_DRIVER_TYPE_I2S_LAST_,
+
+    MCP_PINS_DRIVER_TYPE_GPIOIN_RAW = 0,
+    MCP_PINS_DRIVER_TYPE_GPIOIN_LAST_,
 
 } mcpd_pins_driver_type_t;
 
@@ -43,4 +47,9 @@ enum {
     MCP_PINS_PIN_I2S_WS,
     MCP_PINS_PIN_I2S_DATA,
     MCP_PINS_PIN_I2S_LAST_
+};
+
+enum {
+    MCP_PINS_PIN_GPIOIN_PIN,
+    MCP_PINS_PIN_GPIOIN_LAST_
 };

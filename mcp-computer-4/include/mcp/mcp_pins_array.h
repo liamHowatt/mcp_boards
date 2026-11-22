@@ -47,6 +47,9 @@ static const mcp_pins_entry_t mcp_pins[MCP_PINS_PERIPH_COUNT] = {
       [MCP_PINS_PIN_I2S_WS  ] = {0, 3, .is_input=false},
       [MCP_PINS_PIN_I2S_DATA] = {0, 2, .is_input=false},
    }},
+   {MCP_PINS_PERIPH_TYPE_GPIOIN, 0, {
+      [MCP_PINS_PIN_GPIOIN_PIN] = {0, 1, .is_input=true},
+   }},
 };
 
 #endif /* CONFIG_MCP_PINS */
